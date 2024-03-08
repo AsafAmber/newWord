@@ -236,7 +236,7 @@
           for (let col = startCol; col <= endCol; col++) {
             if (used == 0 && aRR[row] && aRR[row][col] !== arr[0]) {
               if (orderByDir(aRR, row)) {
-                for (let j = 0; j < 72; j++) { // was <143 i might need to change this due to the array to string function  because now there are the line is now from 0 to 141
+                for (let j = 0; j < 72; j++) { // was <143 i might need to change this due to the array to string function  because now there are the lne is now from 0 to 141
                   temp = aRR[row][142-j];
                   //temp = aRR[row][j]
                   aRR[row][142-j] = aRR[row][j];
