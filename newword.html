@@ -362,7 +362,7 @@
               if (text[posAtText] != arrNull[0]) { //time to assign new values to the new cell <143 or <=143 i am not sure
                 aRR[a][b] = text[posAtText];
                 if (text[posAtText] == " ") {
-                  console.log("gojo");
+                  //console.log("gojo");
                   posOfLastSpace = b;
                 }
                 if (text[posAtText] == "\n") {
@@ -371,7 +371,7 @@
                 } else if (b == 142 && (aRR[a] && aRR[a][b] !== arrNull[0])) {
                   posAtText = posAtText + 1;
                   if (posOfLastSpace > -1) {
-                    if (posOfLastSpace == je) {
+                    if (posOfLastSpace == b) {
                       aRR[a][b] = "\n";
                       break;
                     } else {
@@ -402,7 +402,7 @@
                     }
                   } else {
                     aRR[a][b] = "\n";
-                    console.log("toji");
+                    //console.log("toji");
                     posAtText--; // -1 to achive (pos + 1 - 1 == pos)no change to posAtText in this else, so that this line's last char could be repeated because it wasn't written within 143 chars
                     break;
                   }
@@ -426,6 +426,7 @@
             b = 0;
             posOfLastSpace = -1;
           }
+        }
         //textarea.value = arrayToString(aRR, len, numOfRows); //old placement
         if (returnById == 1) { //could change to switch case
           return aRR;
@@ -553,7 +554,43 @@
       }
       //*/
 
+    /*//two ways to calc line count
+      //way one:
+      let numOfRows = 1, sumOfNewLines = 0, sumOfNormalChars = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+      for (let x = 0; x < len; x++) {
+          if (text[x] == "\n") {
+            sumOfNewLines;
+            continue;
+          }
+      }
+      let lineCount = Math.ceil((lengthOfArrNoNulls(text) - sumOfNewLines)/143) + sumOfNewLines + 1; //end of way one and lineCount
+      //second way:
 
+      let numOfRows = 1, sum = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+      let posOfLASTSpace = -1;
+      for (let x = 0; x < len; x++) {
+          if (text[x] == " ") {
+            posOfLASTSpace = x;
+          }
+          if (text[x] == "\n") {
+            sum = 0;
+            //console.log("?");
+            numOfRows = numOfRows + 1;
+            continue;
+          } else if (sum == 142) { //142 or 143 i am not sure i think it should be 143
+            sum = 0;
+            //console.log("??");
+            numOfRows = numOfRows + 1;
+            if (posOfLASTSpace > -1 && posOfLASTSpace != x && canCreateNewLine(textarea, x) == 0) {
+              numOfRows++;
+            }
+            continue;
+          }
+          if (text[x] !== arrNull[0]) {
+            sum = sum + 1;
+          }
+      }
+      //*/
 
       //above is a prep func for the function "arrayToString" it is very simler to "hasHiddenText" and it is build on it but it is here to fix things
       function arrayToString(arR, length, numofLines) {
