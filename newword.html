@@ -324,8 +324,25 @@
 
         /*console.log("hi");
         console.log(len);*/
-        let numOfRows = 1, sum = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+
+        //
+        let numOfRows = 1, sumOfNewLines = 0, sumOfNormalChars = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
         for (let x = 0; x < len; x++) {
+            if (text[x] == "\n") {
+              sumOfNewLines++;
+              continue;
+            }
+        }
+        numOfRows = Math.ceil((lengthOfArrNoNulls(text) - sumOfNewLines)/143) + sumOfNewLines + 1; //end of way one and lineCount
+
+        //sum = 0;
+        //console.log(text);
+        /*let numOfRows = 1, sum = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+        let posOfLASTSpace = -1;
+        for (let x = 0; x < len; x++) {
+            if (text[x] == " ") {
+              posOfLASTSpace = x;
+            }
             if (text[x] == "\n") {
               sum = 0;
               //console.log("?");
@@ -335,14 +352,16 @@
               sum = 0;
               //console.log("??");
               numOfRows = numOfRows + 1;
+              if (posOfLASTSpace > -1 && posOfLASTSpace != x && canCreateNewLine(textarea, x) == 0) {
+                numOfRows++;
+              }
               continue;
             }
             if (text[x] !== arrNull[0]) {
               sum = sum + 1;
             }
-        }
-        //sum = 0;
-        //console.log(text);
+        }*/
+        //
 
         let posOfLastSpace = -1; //-1 being no space char for now;
         let aRR = new Array(numOfRows), posAtText = 0;
@@ -356,7 +375,7 @@
 
           let a = 0, b = 0, moveByForNext = 0, endOfLongWord = -1; // a rows, b cols;
           let tempPosOfText = 0, lenOfLongWord = 0, oldPosAtText = -1;
-          let enable = 0, copyWordToNextLine = []; //enable = 0 disabled, 1=enabled, 2 = at rest (anoter space after end of word);
+          let enable = -1, copyWordToNextLine = []; //enable = -1 disabled or defualt, 0= end of word not in range, 1 = end of word found in range;
           while (a < numOfRows) {
             while (b < 143) {
               if (text[posAtText] != arrNull[0]) { //time to assign new values to the new cell <143 or <=143 i am not sure
@@ -364,11 +383,16 @@
                 if (text[posAtText] == " ") {
                   //console.log("gojo");
                   posOfLastSpace = b;
+                  if (b == 142) {
+                    aRR[a][b] = "\n";
+                    posAtText = posAtText + 1;
+                    break;
+                  }
                 }
                 if (text[posAtText] == "\n") {
                   posAtText = posAtText + 1;
                   break;
-                } else if (b == 142 && (aRR[a] && aRR[a][b] !== arrNull[0])) {
+                } else if (b == 142 && (aRR[a] && aRR[a][b] !== arrNull[0]) && text[posAtText] != " ") {
                   posAtText = posAtText + 1;
                   if (posOfLastSpace > -1) {
                     if (posOfLastSpace == b) {
@@ -377,6 +401,7 @@
                     } else {
                       if (a == numOfRows) //shouldnt happen but just in case
                         break;
+                      enable = 0;
                       for (let p = 0; p < posOfLastSpace; p++) { //clac end of word in possible length next line;
                         if (text[posAtText + p] == " " && enable == 0) {
                           enable = 1; //USED to indecate code passage through here  which is used later to add \n if needed
@@ -385,8 +410,8 @@
                         }
                       }
                       for (let i = 0; i < (142 - posOfLastSpace); i++) { //142 because posOfLastSpace+1 = posOfFirstCharInWord and 142 - posOfFirstCharInWord + 1 = 142 - posLast... -1 + 1 = 142 - posOfLastSpace;
-                        aRR[a + 1][i] = aRR[a][posOfLastSpace + i];
-                        aRR[a][posOfLastSpace + i] = arrNull[0];
+                        aRR[a + 1][i] = aRR[a][posOfLastSpace + i + 1]; //+1 because we need the characters of the word and not including the space that came before it
+                        aRR[a][posOfLastSpace + i + 1] = arrNull[0];
                       }
                       aRR[a][posOfLastSpace] = "\n"; //inorder to go down a line
                       lenOfLongWord = 142 - posOfLastSpace; //because pos of last space doesnt count as a char in the length of the word;
@@ -409,21 +434,19 @@
                 }
                 posAtText++;
               }
-              if (endOfLongWord > -1 && canCreateNewLine(textarea, oldPosAtText) == 1) {
-                b = endOfLongWord;
-                endOfLongWord = -1;
-                oldPosAtText = -1;
-              } else if (enable == 1) {
-                enable = 0;
-                a++;
-                b = endOfLongWord;
-                endOfLongWord = -1;
-                aRR[a][b] = "\n";
-              }
               b++;
             }
             a++;
             b = 0;
+            if (endOfLongWord > -1 && canCreateNewLine(textarea, oldPosAtText) == 1 && enable == 1) {
+              b = endOfLongWord;
+              oldPosAtText = -1;
+            } else if (enable == 0) {
+              aRR[a][endOfLongWord] = "\n";
+              a++;
+            }
+            enable = -1;
+            endOfLongWord = -1;
             posOfLastSpace = -1;
           }
         }
@@ -437,7 +460,8 @@
         } else {
           console.log(aRR);
           console.log(textarea.value);
-          textarea.value = arrayToStringUpdated(aRR, len, numOfRows);
+          console.log(numOfRows);
+          textarea.value = arrayToStringUpdated(aRR, numOfRows);
           return;
         }
       }
@@ -555,11 +579,11 @@
       //*/
 
     /*//two ways to calc line count
-      //way one:
+      //first way:
       let numOfRows = 1, sumOfNewLines = 0, sumOfNormalChars = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
       for (let x = 0; x < len; x++) {
           if (text[x] == "\n") {
-            sumOfNewLines;
+            sumOfNewLines++;
             continue;
           }
       }
@@ -622,17 +646,17 @@
         return result;
       }
       //
-      function arrayToStringUpdated(arR, length, numofLines) {
+      function arrayToStringUpdated(arR, numofLines) {
         let result = '';
         let num = numofLines;
         const arr2 = [];
         for (let i = 0; i < numofLines; i++) { //was arr.length but i thing textarea.length or as it is named length in the function is more accurate
           for (let j = 0; j < 143; j++) {
-            if ((arR[i] && arR[i][j] !== arr2[0]) && (num > 0)) { //i dont know why it needs to be arR[i] && arR[i][j] != arr2[0]
+            if (arR[i] && arR[i][j] !== arr2[0]) { //i dont know why it needs to be arR[i] && arR[i][j] != arr2[0]
               result += arR[i][j];
             }
           }
-          num--;
+          //num--;
         }
         return result;
       }
