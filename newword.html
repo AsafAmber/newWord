@@ -653,18 +653,18 @@
       //
       function arrayToStringUpdated(arR, numofLines) {
         let result = '';
-        let num = numofLines;
-        const arr2 = [];
-        for (let i = 0; i < numofLines; i++) { //was arr.length but i thing textarea.length or as it is named length in the function is more accurate
-          for (let j = 0; j < 143; j++) {
-            if (arR[i] && arR[i][j] !== arr2[0]) { //i dont know why it needs to be arR[i] && arR[i][j] != arr2[0]
+        for (let i = 0; i < numofLines; i++) {
+          for (let j = 0; j < arR[i].length; j++) {
+            if (arR[i][j] !== undefined && arR[i][j] !== null) {
               result += arR[i][j];
+            } else {
+              break; // End of line reached
             }
           }
-          //num--;
         }
         return result;
       }
+
       //
       //func below will take care of math rtl to ltr fixes
       function dirFixRtlToLtr() {
@@ -735,18 +735,19 @@
               }
 
               for (let j = 0; j < 142 - spacePos; j++) {
-                arrnew[j] = text[actualpos + 1 + j];
+                //arrnew[j] = text[actualpos + 1 + j];
                 arr[a][spacePos + j +1] = arrNull[0];
               }
-              arr[a][142] = "\n"; //end here for testing clac
-              moveBy = endspace;
+              arr[a][actualpos + 1] = "\n"; //end here for testing clac
+              /*moveBy = endspace;
               while (arrnew[x] !== arrNull[0]) {
                 arr[a + 1][x] = arrnew[x];
                 x++;
-              }
+              }*/
+              posAtText = actualpos;
               moveTrue = 1;
               x = 0;
-              a++;
+              //a++;
               break; //just so we dont do another "posAtText++;"
             }
             posAtText++;
@@ -756,8 +757,8 @@
           b = 0;
           posAtText++;
           if (moveTrue == 1) {
-            b = endspace;
-            posAtText = newpos;
+          //  b = endspace;
+            //posAtText = newpos;
           }
           moveTrue = 0;
           arrnew = [];
