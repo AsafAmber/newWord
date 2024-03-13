@@ -729,7 +729,7 @@
                   arrnew[142 - spacePos + i] = text[posAtText + 1 + i];
                 }
               }
-              if (endspace == - 1 || spacePos == -1 || spacePos == 142) {
+              if (endspace == - 1 || spacePos == -1 || spacePos == 142 || actualpos == -1) {
                 arr[a][b] = "\n"; //not really the want out put just here for testing
                 break;
               }
@@ -738,7 +738,7 @@
                 //arrnew[j] = text[actualpos + 1 + j];
                 arr[a][spacePos + j +1] = arrNull[0];
               }
-              arr[a][actualpos + 1] = "\n"; //end here for testing clac
+              arr[a][spacePos + 1] = "\n"; //end here for testing clac
               /*moveBy = endspace;
               while (arrnew[x] !== arrNull[0]) {
                 arr[a + 1][x] = arrnew[x];
@@ -756,6 +756,7 @@
           a++;
           b = 0;
           posAtText++;
+          actualpos = -1;
           if (moveTrue == 1) {
           //  b = endspace;
             //posAtText = newpos;
@@ -765,7 +766,7 @@
           endspace = - 1;
           spacePos = -1;
         }
-        //console.log(arr);
+        console.log(arr);
       }
     </script>
   </body>
