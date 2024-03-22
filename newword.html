@@ -34,6 +34,8 @@
     </form>
     <button type="button" onclick="prepToFixText(4)">fix broken text</button>
     <button type="button" onclick="dirFixRtlToLtr()">fix math rtl ==> ltr</button>
+    <button id="saveBtn">Save as Word</button>
+
     <div id="mydiv">
       <div id="mydivheader">Click here to move</div>
       <p>Move</p>
@@ -45,7 +47,14 @@
       let notification = null;
 
       dragElement(document.getElementById("mydiv"));
-
+      document.getElementById('saveBtn').addEventListener('click', function() {
+        var text = document.getElementById('textArea').value;
+        var blob = new Blob([text], { type: 'application/msword' });
+        var link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'document.doc';
+        link.click();
+      });
       function dragElement(elmnt) {
         var pos1 = 0,
           pos2 = 0,
@@ -462,8 +471,6 @@
           return len;
         } else if (returnById == 3) {
           return numOfRows;
-        } else if (returnById = -1) {
-          return;
         } else {
           //console.log(aRR);
           console.log(textarea.value);
