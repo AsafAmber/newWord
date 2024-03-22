@@ -462,6 +462,8 @@
           return len;
         } else if (returnById == 3) {
           return numOfRows;
+        } else if (returnById = -1) {
+          return;
         } else {
           //console.log(aRR);
           console.log(textarea.value);
@@ -669,12 +671,46 @@
       //func below will take care of math rtl to ltr fixes
       function dirFixRtlToLtr() {
         const textarea = document.getElementById("textArea");
-        const arr = prepToFixText(1);
+        const text = textarea.value;
+        console.log(text);
+        let arr = prepToFixText(1);
+        let numofLines = prepToFixText(3);
+        let temp, specialChar = 0;
+        let selection = window.getSelection();
+        let start = textarea.selectionStart, end = textarea.selectionEnd;
+        let helpArr = 0, newText = 0;
+        if(selection.toString().length > 0) {
+          console.log(selection.toString());
+          console.log("start: " + start);
+          console.log("end: " + end);
+          helpArr = new Array(end - start);
+          for (let i = 0; i < end - start; i++) {
+            helpArr[i] = text[start+i];
+            if (helpArr[i] == "^") {
+              specialChar = 1;
+            }
+          }
+          if((helpArr[0] == "+" || helpArr[0] == "-") && specialChar == 0) {
+            temp = helpArr[0];
+            for (let i = 0; i < end - start - 1; i++) {
+              helpArr[i] = helpArr[i + 1];
+            }
+            helpArr[end - start - 1] = temp;
+          } else if (specialChar == 1) {
+            for (let i = 0; i < Math.floor((end - start)/2); i++) {
+              temp = helpArr[i];
+              helpArr[i] = helpArr[end - start - i - 1];
+              helpArr[end - start - i - 1] = temp;
+            }
+          }
 
-        if(window.getSelection().toString().length > 0) {
-          console.log(window.getSelection().toString());
-          //test need to make it work
+          newText = text.substring(0, start) + helpArr.join('') + text.substring(end);
+          arrCreator(textarea, numofLines, arr, newText);
+          textarea.value = arrayToStringUpdated(arr, numofLines);  //apply changes
         }
+
+        //console.log(helpArr);
+        console.log(newText); //apply changes
         return;
       }
       function lengthOfArrNoNulls(arr) {
