@@ -697,7 +697,7 @@
               specialChar = 1;
             }
           }
-          if((helpArr[0] == "+" || helpArr[0] == "-") && specialChar == 0) {
+          if((helpArr[0].charCodeAt(0) < 48 || helpArr[0].charCodeAt(0) > 57) && specialChar == 0) {
             temp = helpArr[0];
             for (let i = 0; i < end - start - 1; i++) {
               helpArr[i] = helpArr[i + 1];
