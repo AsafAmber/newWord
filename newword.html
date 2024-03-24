@@ -682,7 +682,7 @@
         console.log(text);
         let arr = prepToFixText(1);
         let numofLines = prepToFixText(3);
-        let temp, specialChar = 0;
+        let temp, specialChar = 0, strtIndex = 0;
         let selection = window.getSelection();
         let start = textarea.selectionStart, end = textarea.selectionEnd;
         let helpArr = 0, newText = 0;
@@ -695,6 +695,10 @@
             helpArr[i] = text[start+i];
             if (helpArr[i] == "^") {
               specialChar = 1;
+              strtIndex = i + start;
+            } else if ((helpArr[i].charCodeAt(0) < 48 || helpArr[i].charCodeAt(0) > 57) && i > 0 && helpArr[i] != "-" && helpArr[i] != "+") {
+              specialChar = 1;
+              strtIndex = i + start;
             }
           }
           if((helpArr[0].charCodeAt(0) < 48 || helpArr[0].charCodeAt(0) > 57) && specialChar == 0) {
@@ -704,10 +708,15 @@
             }
             helpArr[end - start - 1] = temp;
           } else if (specialChar == 1) {
-            for (let i = 0; i < Math.floor((end - start)/2); i++) {
-              temp = helpArr[i];
-              helpArr[i] = helpArr[end - start - i - 1];
-              helpArr[end - start - i - 1] = temp;
+            let tempArr = new Array(strtIndex + 1 - start);
+            for (let i = 0; i < end - start; i++) {
+              if (start + i < strtIndex) {
+                helpArr[end - 1 - start - i] = text[strtIndex - 1 - i];
+              } else if (start + i == strtIndex) {
+                helpArr[end - 1 - start - i] = text[strtIndex];
+              } else  {
+                helpArr[start + i - strtIndex - 1] = text[start + i];
+              }
             }
           }
 
