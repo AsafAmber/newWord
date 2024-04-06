@@ -99,13 +99,12 @@
 
           const textarea = document.getElementById("textArea"); // gets the text area
           const divRect = elmnt.getBoundingClientRect(); //get the size of the div and it position
-          const textareaRect = textarea.getBoundingClientRect(); //gets size and position of the etext area
+          const textareaRect = textarea.getBoundingClientRect(); //gets size and position of the text area
 
-          const overlapLeft = Math.max(divRect.left, textareaRect.left); //i think the problem is here // the bigger distance from the left-side of the page when the other end of the distance is the div or the textarea the bigger distance is the one sent to the function
-          const overlapRight = Math.min(divRect.right, textareaRect.right); // the smaller distance from the right side of the page when the other end of the distance is the div or the textarea the smaller distance is the one sent to the function
-          const overlapTop = Math.max(divRect.top, textareaRect.top); // the bigger distance from the top of the page when the other end of the distance is the div or the textarea the bigger distance is the one sent to the function
-          const overlapBottom = Math.min(divRect.bottom, textareaRect.bottom); // the smaller distance from the bottom of the page when the other end of the distance is the div or the textarea the smaller distance is the one sent to the function
-
+          const overlapLeft = Math.max(divRect.left, textareaRect.left); //.max original//i think the problem is here // the bigger distance from the left-side of the page when the other end of the distance is the div or the textarea the bigger distance is the one sent to the function
+          const overlapRight = Math.min(divRect.right, textareaRect.right); //.min original //the smaller distance from the right side of the page when the other end of the distance is the div or the textarea the smaller distance is the one sent to the function
+          const overlapTop = Math.max(divRect.top, textareaRect.top); //.max original //the bigger distance from the top of the page when the other end of the distance is the div or the textarea the bigger distance is the one sent to the function
+          const overlapBottom = Math.min(divRect.bottom, textareaRect.bottom);// .min original // the smaller distance from the bottom of the page when the other end of the distance is the div or the textarea the smaller distance is the one sent to the function
         /*console.log("divRect.width:");
           console.log(divRect.width);
           console.log("textareaRect.width:");
@@ -170,7 +169,7 @@
         const lineHeight = Math.ceil(fontSize * 1.2); // You can adjust the multiplier as needed 1.2 original
 
         // Calculate charWidth based on the average character width
-        const charWidth = fontSize * 0.6; // You can adjust the multiplier as needed 0.6 orginal
+        const charWidth = 1057/143;//fontSize * 0.6; // You can adjust the multiplier as needed 0.6 orginal
 
         // Create a 2D array to represent the contents of the textarea
         //const textArray = rows.map(row => row.split(''));
@@ -183,79 +182,26 @@
         console.log("hi");
         console.log(len);
 
-        //experiment
-        /* //start of old code
-        let numOfRows = 0, sum = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
-        for (let x = 0; x < len; x++) {
-            sum = sum + 1;
-            if (text[x] == "\n") {
-              sum = 0;
-              //console.log("?");
-              numOfRows = numOfRows + 1;
-            }
-            if (sum == 143) { //142 or 143 i am not sure i think it should be 143
-              sum = 0;
-              //console.log("??");
-              numOfRows = numOfRows + 1;
-            }
-        }
-        //sum = 0;
-        //console.log(text);
-        let aRR = new Array(numOfRows), posAtText = 0;
-        if (text != "") { //everthing works well but too much space mess with it a bit
-          //let aRR = new Array(numOfRows), posAtText = 0;
-          for (let y = 0; y <= numOfRows; y++) {
-            aRR[y] = []; //create a new cell in the 2d array
-            for (let je = 0; je < 143; je++) { //time to assign new values to the new cell <143 or <=143 i am not sure
-              if (text[posAtText] == "\n") {
-                aRR[y][je] = "\n";
-                posAtText = posAtText + 1;
-                break;
-              }
-              aRR[y][je] = text[posAtText];
-              posAtText++;
-            }
-          }
-        }
-        */ //end of old code
-        //textarea.value = arrayToString(aRR, len, numOfRows);
         let aRR = prepToFixText(1);
 
-
-        //
-
-        //console.log(aRR);
-        //console.log(aRR[0]);
-        //console.log(textArray[1][2]); // One problem is that it does not reconize a new line if you just keep writing and dont press enter
         const arr = []; //this array is empty because I use it to get the value "undefined"
         //console.log(arr[0]);
         //console.log(textArray[1][1])
         //console.log(textArray[0]);
         // Determine the row and column indices for the top-left and bottom-right corners of the div
         const startRow = Math.floor(top / lineHeight);
-        const startCol = Math.floor(left / charWidth);
+        const startCol = Math.floor(left / charWidth) - 1;
         const endRow = Math.ceil(bottom / lineHeight);
-        const endCol = Math.ceil(right / charWidth);
+        const endCol = Math.ceil(right / charWidth) - 1;
         console.log("startRow is");
         console.log(startRow,  endRow, startCol, endCol);
         //console.log(aRR[0][130]);
         let used = 0, temp;
+        const numOfRows = prepToFixText(3);
         // Check if any of the characters within the div's bounding box are not empty
+        orderArrByDir(aRR, numOfRows, text, textarea); //find true directions
         for (let row = startRow; row <= endRow; row++) {
           for (let col = startCol; col <= endCol; col++) {
-            if (used == 0 && aRR[row] && aRR[row][col] !== arr[0]) {
-              if (orderByDir(aRR, row)) {
-                for (let j = 0; j < 72; j++) { // was <143 i might need to change this due to the array to string function  because now there are the line is now from 0 to 141
-                  temp = aRR[row][142-j];
-                  //temp = aRR[row][j]
-                  aRR[row][142-j] = aRR[row][j];
-                  //console.log(aRR[row][142-j]);
-                  aRR[row][j] = temp;
-                }
-              }
-              //console.log(aRR[0]);
-              used = 1;
-            }
             if (aRR[row] && aRR[row][col] !== ' ' && aRR[row][col] !== arr[0]) {
               //textarae.value = arrayToString(aRR);
               return true;
@@ -312,14 +258,14 @@
         //const rows = text.split("\n");
         //console.log(rows);
         //const textarea = document.getElementById("textArea");
-        const textareaStyle = getComputedStyle(textarea);
+        //const textareaStyle = getComputedStyle(textarea);
 
         // Calculate lineHeight based on the font size of the textarea
-        const fontSize = parseFloat(textareaStyle.fontSize);
-        const lineHeight = Math.ceil(fontSize * 1.2); // You can adjust the multiplier as needed 1.2 original
+        //const fontSize = parseFloat(textareaStyle.fontSize);
+        //const lineHeight = Math.ceil(fontSize * 1.2); // You can adjust the multiplier as needed 1.2 original
 
         // Calculate charWidth based on the average character width
-        const charWidth = fontSize * 0.6; // You can adjust the multiplier as needed 0.6 orginal
+        //const charWidth = fontSize * 0.6; // You can adjust the multiplier as needed 0.6 orginal
 
         // Create a 2D array to represent the contents of the textarea
         //const textArray = rows.map(row => row.split(''));
@@ -464,6 +410,7 @@
           }
         }*/
         arrCreator(textarea, numOfRows, aRR, text);
+        //orderArrByDir(aRR, numOfRows, text, textarea);
         //textarea.value = arrayToString(aRR, len, numOfRows); //old placement
         if (returnById == 1) { //could change to switch case
           return aRR;
@@ -696,7 +643,7 @@
             if (helpArr[i] == "^") {
               specialChar = 1;
               strtIndex = i + start;
-            } else if ((helpArr[i].charCodeAt(0) < 48 || helpArr[i].charCodeAt(0) > 57) && i > 0 && helpArr[i] != "-" && helpArr[i] != "+") {
+            } else if ((helpArr[i].charCodeAt(0) < 48 || helpArr[i].charCodeAt(0) > 57) && i > 0 && helpArr[i] != "-" && helpArr[i] != "+" && helpArr[i] != ".") {
               specialChar = 1;
               strtIndex = i + start;
             }
@@ -819,6 +766,53 @@
           spacePos = -1;
         }
         console.log(arr);
+      }
+      function isALetter(letter, retType) {
+        let ahlap = 'א', tepth = 'ת';
+        let asciiValAhlap = ahlap.charCodeAt(0), asciiValTepth = tepth.charCodeAt(0);
+        if (letter.charCodeAt(0) >= 65 && letter.charCodeAt(0) <= 90) {
+          if (retType == 0) {
+            return true;
+          } else {
+            return 0; //English char
+          }
+        } else if (letter.charCodeAt(0) >= 97 && letter.charCodeAt(0) <= 122) {
+          if (retType == 0) {
+            return true;
+          } else {
+            return 0; //English char
+          }
+        } else if (letter.charCodeAt(0) >= asciiValAhlap && letter.charCodeAt(0) <= asciiValTepth) {
+          if (retType == 0) {
+            return true;
+          } else {
+            return 1; //Hebrew char
+          }
+        }
+        return false;
+      }
+      function orderArrByDir(arr, numofLines, text, textarea) {
+        let boolTOF = 0; //0 for false, 1 for true
+        let firstLetter = -2;
+        for (let i = 0; i < numofLines; i++) {
+          for (let j = 0; j < 143; j++) {
+            if (isALetter(arr[i][j], 0)) {
+              boolTOF = isALetter(arr[i][j], 1);
+              break;
+            }
+          }
+          if (boolTOF == 1) {
+            swapArrRow(arr, i);
+          }
+        }
+      }
+      function swapArrRow(arr, rowNum) {
+        let temp;
+        for (let i = 0; i < 143/2; i++) {
+          temp = arr[rowNum][i];
+          arr[rowNum][i] = arr[rowNum][142 - i];
+          arr[rowNum][142- i] = temp;
+        }
       }
     </script>
   </body>
