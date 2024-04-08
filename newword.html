@@ -34,6 +34,7 @@
     </form>
     <button type="button" onclick="prepToFixText(4)">fix broken text</button>
     <button type="button" onclick="dirFixRtlToLtr()">fix math rtl ==> ltr</button>
+    <button type="button" onclick="swapPushByOneLeftAppendEnd()">move end to start</button>
     <button id="saveBtn">Save as Word</button>
 
     <div id="mydiv">
@@ -813,6 +814,29 @@
           arr[rowNum][i] = arr[rowNum][142 - i];
           arr[rowNum][142- i] = temp;
         }
+      }
+      function swapPushByOneLeftAppendEnd() {
+        const textarea = document.getElementById("textArea");
+        const text = textarea.value;
+        let arr = prepToFixText(1);
+        let numofLines = prepToFixText(3);
+        let temp;
+        let selection = window.getSelection();
+        let start = textarea.selectionStart, end = textarea.selectionEnd;
+        let helpArr = new Array(end - start);
+        for (let i = 0; i < end - start - 1; i++) {
+          helpArr[i+1] = text[start + i];
+        }
+        helpArr[0] = text[end - 1];
+        /*temp = helpArr[0];
+        helpArr[0] = helpArr[end - start - 1];
+        helpArr[end - start - 1] = temp;*/
+        newText = text.substring(0, start) + helpArr.join('') + text.substring(end);
+        /*temp = text[start];
+        text[start] = text[end - 1];
+        text[end - 1] = temp;*/
+        arrCreator(textarea, numofLines, arr, newText);
+        textarea.value = arrayToStringUpdated(arr, numofLines);
       }
     </script>
   </body>
