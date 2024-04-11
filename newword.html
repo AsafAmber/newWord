@@ -797,9 +797,11 @@
         let firstLetter = -2;
         for (let i = 0; i < numofLines; i++) {
           for (let j = 0; j < 143; j++) {
-            if (isALetter(arr[i][j], 0)) {
-              boolTOF = isALetter(arr[i][j], 1);
-              break;
+            if (arr[i][j] != undefined) {
+              if (isALetter(arr[i][j], 0)) {
+                boolTOF = isALetter(arr[i][j], 1);
+                break;
+              }
             }
           }
           if (boolTOF == 1) {
