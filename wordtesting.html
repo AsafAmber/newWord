@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html>
+  <style>
+    #mydiv {
+      position: absolute;
+      z-index: 9;
+      background-color: #f1f1f1;
+      text-align: center;
+      border: 1px solid #d3d3d3;
+    }
+
+    #mydivheader {
+      padding: 10px;
+      cursor: move;
+      z-index: 10;
+      background-color: #2196F3;
+      color: #fff;
+    }
+    #textArea {
+      resize: none;
+    }
+    .notification {
+      position: absolute;
+      background-color: #f44336;
+      color: white;
+      padding: 5px;
+      border-radius: 4px;
+      z-index: 11;
+    }
+    #testRun {
+      width: 1057px;
+      height: 660px;
+      border: 1px solid #ccc;
+      overflow: auto;
+      resize: none;
+      white-space: pre-wrap;
+    }
+    img {
+      resize: both;
+    }
+    .divTester {
+      direction: auto;
+    }
+  </style>
+  <body>
+    <form id="textform">
+      <textarea id="textArea" name="Massage" rows="40" cols="141" required dir = "auto"></textarea>
+    </form>
+    <button type="button" onclick="prepToFixText(4)">fix broken text</button>
+    <button type="button" onclick="dirFixRtlToLtr()">fix math rtl ==> ltr</button>
+    <button type="button" onclick="swapPushByOneLeftAppendEnd()">move end to start</button>
+    <button id="saveBtn">Save as Word</button>
+    <button type ="button" onclick="convertToDiv()">Convert to div</button>
+    <div contentEditable="true" id = "testRun" dir = "auto"></div>
+    <div id="mydiv">
+      <div id="mydivheader">Click here to move</div>
+      <p>Move</p>
+      <p>this</p>
+      <p>DIV</p>
+    </div>
+
+    <script>
+      let notification = null;
+
+      dragElement(document.getElementById("mydiv"));
+      document.getElementById('saveBtn').addEventListener('click', function() {
+        var text = document.getElementById('textArea').value;
+        var blob = new Blob([text], { type: 'application/msword' });
+        var link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'document.doc';
+        link.click();
+      });
+      function dragElement(elmnt) {
+        var pos1 = 0,
+          pos2 = 0,
+          pos3 = 0,
+          pos4 = 0;
+        if (document.getElementById(elmnt.id + "header")) {
+          document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+        } else {
+          elmnt.onmousedown = dragMouseDown;
+        }
+
+        function dragMouseDown(e) {
+          e = e || window.event;
+          e.preventDefault();
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          document.onmouseup = closeDragElement;
+          document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+          e = e || window.event;
+          e.preventDefault();
+          pos1 = pos3 - e.clientX;
+          pos2 = pos4 - e.clientY;
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+
+          const newTop = elmnt.offsetTop - pos2;
+          const newLeft = elmnt.offsetLeft - pos1;
+
+          const minX = 0;
+          const minY = 0;
+          const maxX = window.innerWidth - elmnt.offsetWidth;
+          const maxY = window.innerHeight - elmnt.offsetHeight;
+
+          const clampedTop = Math.max(minY, Math.min(maxY, newTop));
+          const clampedLeft = Math.max(minX, Math.min(maxX, newLeft));
+
+          elmnt.style.top = clampedTop + "px";
+          elmnt.style.left = clampedLeft + "px";
+
+          const textarea = document.getElementById("textArea"); // gets the text area
+          const divRect = elmnt.getBoundingClientRect(); //get the size of the div and it position
+          const textareaRect = textarea.getBoundingClientRect(); //gets size and position of the text area
+
+          const overlapLeft = Math.max(divRect.left, textareaRect.left); //.max original//i think the problem is here // the bigger distance from the left-side of the page when the other end of the distance is the div or the textarea the bigger distance is the one sent to the function
+          const overlapRight = Math.min(divRect.right, textareaRect.right); //.min original //the smaller distance from the right side of the page when the other end of the distance is the div or the textarea the smaller distance is the one sent to the function
+          const overlapTop = Math.max(divRect.top, textareaRect.top); //.max original //the bigger distance from the top of the page when the other end of the distance is the div or the textarea the bigger distance is the one sent to the function
+          const overlapBottom = Math.min(divRect.bottom, textareaRect.bottom);// .min original // the smaller distance from the bottom of the page when the other end of the distance is the div or the textarea the smaller distance is the one sent to the function
+        /*console.log("divRect.width:");
+          console.log(divRect.width);
+          console.log("textareaRect.width:");
+          console.log(textareaRect.width); */
+
+          if (hasHiddenText(textarea, overlapLeft, overlapTop, overlapRight, overlapBottom)) {
+            if (!notification) {
+              notification = document.createElement("div");
+              notification.className = "notification";
+              notification.textContent = "Text blocked by draggable div";
+              document.body.appendChild(notification);
+            }
+
+            notification.style.left = overlapLeft + "px";
+            notification.style.top = overlapTop + "px";
+          } else {
+            if (notification) {
+              document.body.removeChild(notification);
+              notification = null;
+            }
+          }
+        }
+
+        function closeDragElement() {
+          document.onmouseup = null;
+          document.onmousemove = null;
+        }
+      }
+
+      /*function hasHiddenText(textarea, left, top, right, bottom) {
+        const text = textarea.value;
+        const rows = text.split("\n"); //creates array of the text entered in the textarea
+        console.log(rows);
+        const lineHeight = textarea.clientHeight / rows.length; //gets the height of a line
+
+        const startRow = Math.floor(top / lineHeight);
+        const endRow = Math.ceil(bottom / lineHeight);
+//i think that the problem is in this function and it's way of detacting the div
+        for (let i = startRow; i < endRow; i++) { //let i = startRow; i < endRow; i++ original
+          const rowStartX = i === startRow ? left : 0;
+          const rowEndX = i === endRow - 1 ? right : textarea.clientWidth;
+          const startIndex = textarea.selectionStart;
+          const endIndex = textarea.selectionEnd;
+
+          // Check if the div is directly on top of the text and blocks it
+          if (startIndex < (i + 1) * rowEndX && endIndex > i * rowStartX && startIndex >= i * rowEndX && endIndex <= (i + 1) * rowEndX) {
+            return true;
+          }
+        }
+
+        return false;
+      }*/
+      function hasHiddenText(textarea, left, top, right, bottom) {
+        const text = textarea.value;
+        //const rows = text.split("\n");
+        //console.log(rows);
+        //const textarea = document.getElementById("textArea");
+        const textareaStyle = getComputedStyle(textarea);
+
+        // Calculate lineHeight based on the font size of the textarea
+        const fontSize = parseFloat(textareaStyle.fontSize);
+        const lineHeight = Math.ceil(fontSize * 1.2); // You can adjust the multiplier as needed 1.2 original
+        console.log("fontSize: " + fontSize);
+
+        // Calculate charWidth based on the average character width
+        const charWidth = 1057/143;//fontSize * 0.6; // You can adjust the multiplier as needed 0.6 orginal
+
+        // Create a 2D array to represent the contents of the textarea
+        //const textArray = rows.map(row => row.split(''));
+
+        //lets create a new improved array
+        let len = text.length;
+
+        //console.log(text);
+
+        console.log("hi");
+        console.log(len);
+
+        let aRR = prepToFixText(1);
+
+        const arr = []; //this array is empty because I use it to get the value "undefined"
+        //console.log(arr[0]);
+        //console.log(textArray[1][1])
+        //console.log(textArray[0]);
+        // Determine the row and column indices for the top-left and bottom-right corners of the div
+        const startRow = Math.floor(top / lineHeight);
+        const startCol = Math.floor(left / charWidth) - 1;
+        const endRow = Math.ceil(bottom / lineHeight);
+        const endCol = Math.ceil(right / charWidth) - 1;
+        console.log("startRow is");
+        console.log(startRow,  endRow, startCol, endCol);
+        //console.log(aRR[0][130]);
+        let used = 0, temp;
+        const numOfRows = prepToFixText(3);
+        // Check if any of the characters within the div's bounding box are not empty
+        orderArrByDir(aRR, numOfRows, text, textarea); //find true directions
+        for (let row = startRow; row <= endRow; row++) {
+          for (let col = startCol; col <= endCol; col++) {
+            if (aRR[row] && aRR[row][col] !== ' ' && aRR[row][col] !== arr[0]) {
+              //textarae.value = arrayToString(aRR);
+              return true;
+            }
+          }
+          used = 0;
+        }
+        return false;
+      }
+      function orderByDir(textArr, atRow) {
+          let length = 0;
+          let firstChar;
+          let arr = [], i = 0, t = 0, firstPos;
+          while (textArr[atRow][i] !== arr[0]) {
+            length = length + 1;
+            if (textArr[atRow][i] !== ' ' && t == 0) {
+              firstChar = textArr[atRow][i];
+              firstPos = i;
+              t = 1;
+            }
+            i = i + 1;
+          }
+          length = 142;
+          //console.log(textArr[0]);
+          let temp; //temperery item for char switching
+          //textArr[0][1] = 1; //success
+          const valCharFirst = firstChar.codePointAt(0);
+          //textArr[0][1] = valCharFirst; //successful
+          //console.log(valCharFirst);
+          if (valCharFirst >= 1488 && valCharFirst <= 1514) {
+            //console.log("got here");
+            return true;
+            //for (let j = 0; j < 143; j++) {
+              //temp = textArr[atRow][length-j];
+              //textArr[atRow][length-j] = textArr[atRow][j];
+              //console.log(textArr[atRow][length-j]);
+              //textArr[atRow][j] = temp;
+
+            //}
+            //console.log(textArr[atRow][length]);
+          }
+          //console.log("ewe");
+          //console.log(textArr[atRow][length]);
+          //console.log(textArr[atRow][142]);
+          return false;
+      }
+
+      // ok so some needed fixes lets make it so that only a button calls the string fixing
+      function prepToFixText(returnById) { //returnById : 4-defualt (do nothing), 1-aRR, 2 - len, 3 -numOfRows;
+        const textarea = document.getElementById("textArea"); // gets the text area
+        const text = textarea.value;
+
+        let arrNull = [];
+        //const rows = text.split("\n");
+        //console.log(rows);
+        //const textarea = document.getElementById("textArea");
+        //const textareaStyle = getComputedStyle(textarea);
+
+        // Calculate lineHeight based on the font size of the textarea
+        //const fontSize = parseFloat(textareaStyle.fontSize);
+        //const lineHeight = Math.ceil(fontSize * 1.2); // You can adjust the multiplier as needed 1.2 original
+
+        // Calculate charWidth based on the average character width
+        //const charWidth = fontSize * 0.6; // You can adjust the multiplier as needed 0.6 orginal
+
+        // Create a 2D array to represent the contents of the textarea
+        //const textArray = rows.map(row => row.split(''));
+
+        //lets create a new improved array
+        let len = text.length;
+        let lastSpace = -1, sizeOfBiggestWithSpace = 0, sizeOfNextsmallestWord = 144;
+        let xStartOflongest = 0;
+
+        //console.log(text);
+
+        /*console.log("hi");
+        console.log(len);*/
+
+        //
+        let numOfRows = 0, sumOfNewLines = 0, sumOfNormalChars = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+        for (let x = 0; x < len; x++) {
+            if (text[x] == "\n") {
+              sumOfNewLines++;
+            }
+        }
+        numOfRows = Math.ceil((lengthOfArrNoNulls(text) - sumOfNewLines)/143) + sumOfNewLines; //end of way one and lineCount
+
+        //sum = 0;
+        //console.log(text);
+        /*let numOfRows = 1, sum = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+        let posOfLASTSpace = -1;
+        for (let x = 0; x < len; x++) {
+            if (text[x] == " ") {
+              posOfLASTSpace = x;
+            }
+            if (text[x] == "\n") {
+              sum = 0;
+              //console.log("?");
+              numOfRows = numOfRows + 1;
+              continue;
+            } else if (sum == 142) { //142 or 143 i am not sure i think it should be 143
+              sum = 0;
+              //console.log("??");
+              numOfRows = numOfRows + 1;
+              if (posOfLASTSpace > -1 && posOfLASTSpace != x && canCreateNewLine(textarea, x) == 0) {
+                numOfRows++;
+              }
+              continue;
+            }
+            if (text[x] !== arrNull[0]) {
+              sum = sum + 1;
+            }
+        }*/
+        //
+
+        let posOfLastSpace = -1; //-1 being no space char for now;
+        let aRR = new Array(numOfRows), posAtText = 0;
+        //change it to a 2d array:
+        for (let y = 0; y < numOfRows; y++) {
+          aRR[y] = []; //create a new cell in the 2d array
+        }
+        /*if (text != "") { //everthing works well but too much space mess with it a bit
+          let a = 0, b = 0, moveByForNext = 0, endOfLongWord = -1; // a rows, b cols;
+          let tempPosOfText = 0, lenOfLongWord = 0, oldPosAtText = -1;
+          let enable = -1, copyWordToNextLine = []; //enable = -1 disabled or defualt, 0= end of word not in range, 1 = end of word found in range;
+          while (a < numOfRows) {
+            while (b < 143) {
+              if (text[posAtText] != arrNull[0]) { //time to assign new values to the new cell <143 or <=143 i am not sure
+                aRR[a][b] = text[posAtText];
+                if (text[posAtText] == " ") {
+                  //console.log("gojo");
+                  posOfLastSpace = b;
+                  if (b == 142) {
+                    aRR[a][b] = "\n";
+                    //posAtText = posAtText + 1;
+                    break;
+                  }
+                }
+                if (text[posAtText] == "\n") {
+                  //posAtText = posAtText + 1;
+                  break;
+                } else if (b == 142 && (aRR[a] && aRR[a][b] !== arrNull[0]) && text[posAtText] != " ") {
+                  //posAtText = posAtText + 1;
+                  if (posOfLastSpace > -1) {
+                    if (text[posAtText + 1] == " ") {
+                      aRR[a][b+1] = "\n"; //was b and was changed to b+1
+                      posAtText--;
+                      break;
+                    } else {
+                      if (a == numOfRows) //shouldnt happen but just in case
+                        break;
+                      enable = 0;
+                      for (let p = 0; p < posOfLastSpace; p++) { //clac end of word in possible length next line;
+                        if (text[posAtText + p + 1] == " " && enable == 0) {
+                          enable = 1; //USED to indecate code passage through here  which is used later to add \n if needed
+                          endOfLongWord = p;
+                          break;
+                        }
+                      }
+                      if (endOfLongWord == -1)
+                        break;
+                      for (let i = 0; i < 142 - posOfLastSpace; i++) { //142 because posOfLastSpace+1 = posOfFirstCharInWord and 142 - posOfFirstCharInWord + 1 = 142 - posLast... -1 + 1 = 142 - posOfLastSpace;
+                        aRR[a + 1][i] = aRR[a][posOfLastSpace + i + 1]; //+1 because we need the characters of the word and not including the space that came before it
+                        aRR[a][posOfLastSpace + i + 1] = arrNull[0];
+                      }
+                      aRR[a][posOfLastSpace] = "\n"; //inorder to go down a line //changed to ans+1
+                      lenOfLongWord = 142 - posOfLastSpace; //because pos of last space doesnt count as a char in the length of the word;
+                      if (endOfLongWord > -1 && canCreateNewLine(textarea, posAtText) == 1) {
+                        oldPosAtText = posAtText;
+                        moveByForNext = endOfLongWord;
+                        posAtText += 143 - posOfLastSpace; //142-posOfLastSpace +1 brings us to next the rest of the word.
+                        for (let m = lenOfLongWord; m < endOfLongWord; m++) { // m < endposLongWord because endOfLongWord is the location of another " "
+                          aRR[a + 1][m] == text[posAtText];
+                          posAtText++; //handels posAtText shift
+                        }
+                        break; //i think this should be here- in need of checking
+                      }
+
+                    }
+                  } else {
+                    aRR[a][b] = "\n"; //changed to b+1 from b
+                    //console.log("toji");
+                    //posAtText--; // -1 to achive (pos + 1 - 1 == pos)no change to posAtText in this else, so that this line's last char could be repeated because it wasn't written within 143 chars
+                    break;
+                  }
+                }
+              }
+              posAtText++;
+              b++;
+            }
+            a++;
+            b = 0;
+            posAtText++;
+            if (endOfLongWord > -1 && canCreateNewLine(textarea, oldPosAtText) == 1 && enable == 1) {
+              b = endOfLongWord + 1;
+              oldPosAtText = -1;
+            } else if (enable == 0) {
+              aRR[a][endOfLongWord] = "\n";
+              a++;
+            }
+            enable = -1;
+            endOfLongWord = -1;
+            posOfLastSpace = -1;
+            console.log("row:" + a);
+            console.log(aRR);
+          }
+        }*/
+        arrCreator(textarea, numOfRows, aRR, text);
+        //orderArrByDir(aRR, numOfRows, text, textarea);
+        //textarea.value = arrayToString(aRR, len, numOfRows); //old placement
+        if (returnById == 1) { //could change to switch case
+          return aRR;
+        } else if (returnById == 2) {
+          return len;
+        } else if (returnById == 3) {
+          return numOfRows;
+        } else {
+          //console.log(aRR);
+          console.log(textarea.value);
+          console.log(numOfRows);
+          textarea.value = arrayToStringUpdated(aRR, numOfRows);
+          return;
+        }
+      }
+
+
+      //new
+      /*let a = 0, b = 0, moveByForNext = 0, endOfLongWord = -1; // a rows, b cols;
+      let tempPosOfText = 0, lenOfLongWord = 0, oldPosAtText = -1;
+      let enable = 0, copyWordToNextLine = []; //enable = 0 disabled, 1=enabled, 2 = at rest (anoter space after end of word);
+      while (a < numOfRows) {
+        while (b < 143) {
+          if (text[posAtText] != arrNull[0]) { //time to assign new values to the new cell <143 or <=143 i am not sure
+            aRR[a][b] = text[posAtText];
+            if (text[posAtText] == " ") {
+              console.log("gojo");
+              posOfLastSpace = b;
+            }
+            if (text[posAtText] == "\n") {
+              posAtText = posAtText + 1;
+              break;
+            } else if (b == 142 && (aRR[a] && aRR[a][b] !== arrNull[0])) {
+              posAtText = posAtText + 1;
+              if (posOfLastSpace > -1) {
+                if (posOfLastSpace == je) {
+                  aRR[a][b] = "\n";
+                  break;
+                } else {
+                  if (a == numOfRows) //shouldnt happen but just in case
+                    break;
+                  for (let p = 0; p < posOfLastSpace; p++) { //clac end of word in possible length next line;
+                    if (text[posAtText + p] == " " && enable == 0) {
+                      enable = 1;
+                      endOfLongWord = p;
+                      break;
+                    }
+                  }
+                  for (let i = 0; i < (142 - posOfLastSpace); i++) { //143 for another cycle sience the for condition didn't include 142 - posOfLastSpace
+                    aRR[a + 1][i] = aRR[a][posOfLastSpace + i];
+                    aRR[a][posOfLastSpace + i] = arrNull[0];
+                  }
+                  aRR[a][posOfLastSpace] = "\n"; //inorder to go down a line
+                  lenOfLongWord = 142 - posOfLastSpace;
+                  if (endOfLongWord > 0 && canCreateNewLine(textarea, posAtText) == 1) {
+                    oldPosAtText = posAtText;
+                    moveByForNext = endOfLongWord;
+                    for (let m = lenOfLongWord; m <= endOfLongWord; m++) {
+                      aRR[a + 1][m] == text[posAtText];
+                      posAtText++; //handels posAtText shift
+                    }
+                  }
+
+                }
+              } else {
+                aRR[a][b] = "\n";
+                console.log("toji");
+                posAtText--; // -1 to achive (pos + 1 - 1 == pos)no change to posAtText in this else, so that this line's last char could be repeated because it wasn't written within 143 chars
+                break;
+              }
+            }
+            posAtText++;
+          }
+          if (endOfLongWord > -1 && canCreateNewLine(textarea, oldPosAtText) == 1) {
+            b = endOfLongWord;
+            endOfLongWord = -1;
+            oldPosAtText = -1;
+          }
+          b++;
+        }
+        a++;
+        b = 0;
+        posOfLastSpace = -1;
+      }
+      for (let y = 0; y < numOfRows; y++) { //old
+        //aRR[y] = []; //create a new cell in the 2d array
+        for (let je = 0; je < 143; je++) {
+          if (text[posAtText] != arrNull[0]) { //time to assign new values to the new cell <143 or <=143 i am not sure
+            aRR[y][je] = text[posAtText];
+            if (text[posAtText] == " ") {
+              console.log("gojo");
+              posOfLastSpace = je;
+            }
+            if (text[posAtText] == "\n") {
+              //aRR[y][je] = "\n"; //no need for this line
+              posAtText = posAtText + 1;
+              break;
+            } else if (je == 142 && (aRR[y] && aRR[y][je] !== arrNull[0])) {
+              posAtText = posAtText + 1;
+              if (posOfLastSpace > -1) {
+                if (posOfLastSpace == je) {
+                  aRR[y][je] = "\n";
+                  break;
+                } else {
+                  if (y == numOfRows) //shouldnt happen but just in case
+                    break;
+                  for (let i = 0; i < (143 - posOfLastSpace); i++) { //143 for another cycle sience the for condition didn't include 142 - posOfLastSpace
+                    aRR[y + 1][i] = aRR[y][posOfLastSpace + i];
+                    aRR[y][posOfLastSpace + i] = arrNull[0];
+                  }
+                  aRR[y][posOfLastSpace] = "\n"; //inorder to go down a line
+                }
+              } else {
+                aRR[y][je] = "\n";
+                console.log("toji");
+                posAtText--; // -1 to achive (pos + 1 - 1 == pos)no change to posAtText in this else, so that this line's last char could be repeated because it wasn't written within 143 chars
+                break;
+              }
+            }
+
+            //aRR[y][je] = text[posAtText];
+            posAtText++;
+          }
+        }
+        posOfLastSpace = -1;
+      }
+      //*/
+
+    /*//two ways to calc line count
+      //first way:
+      let numOfRows = 1, sumOfNewLines = 0, sumOfNormalChars = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+      for (let x = 0; x < len; x++) {
+          if (text[x] == "\n") {
+            sumOfNewLines++;
+            continue;
+          }
+      }
+      let lineCount = Math.ceil((lengthOfArrNoNulls(text) - sumOfNewLines)/143) + sumOfNewLines + 1; //end of way one and lineCount
+      //second way:
+
+      let numOfRows = 1, sum = 0; //maybe numOfRows should start with the value 1 instead of 0? i think it should be 0 because the loop inculdes the last line even if there are 0 lines/rows
+      let posOfLASTSpace = -1;
+      for (let x = 0; x < len; x++) {
+          if (text[x] == " ") {
+            posOfLASTSpace = x;
+          }
+          if (text[x] == "\n") {
+            sum = 0;
+            //console.log("?");
+            numOfRows = numOfRows + 1;
+            continue;
+          } else if (sum == 142) { //142 or 143 i am not sure i think it should be 143
+            sum = 0;
+            //console.log("??");
+            numOfRows = numOfRows + 1;
+            if (posOfLASTSpace > -1 && posOfLASTSpace != x && canCreateNewLine(textarea, x) == 0) {
+              numOfRows++;
+            }
+            continue;
+          }
+          if (text[x] !== arrNull[0]) {
+            sum = sum + 1;
+          }
+      }
+      //*/
+
+      //above is a prep func for the function "arrayToString" it is very simler to "hasHiddenText" and it is build on it but it is here to fix things
+
+      //
+      function arrayToStringUpdated(arR, numofLines) {
+        let result = '';
+        for (let i = 0; i < numofLines; i++) {
+          for (let j = 0; j < arR[i].length; j++) {
+            if (arR[i][j] !== undefined && arR[i][j] !== null) {
+              result += arR[i][j];
+            } else {
+              break; // End of line reached
+            }
+          }
+        }
+        return result;
+      }
+
+      //
+      //func below will take care of math rtl to ltr fixes
+      function dirFixRtlToLtr() {
+        const textarea = document.getElementById("textArea");
+        const text = textarea.value;
+        console.log(text);
+        let arr = prepToFixText(1);
+        let numofLines = prepToFixText(3);
+        let temp, specialChar = 0, strtIndex = 0;
+        let selection = window.getSelection();
+        let start = textarea.selectionStart, end = textarea.selectionEnd;
+        let helpArr = 0, newText = 0;
+        if(selection.toString().length > 0) {
+          console.log(selection.toString());
+          console.log("start: " + start);
+          console.log("end: " + end);
+          helpArr = new Array(end - start);
+          for (let i = 0; i < end - start; i++) {
+            helpArr[i] = text[start+i];
+            if (helpArr[i] == "^") {
+              specialChar = 1;
+              strtIndex = i + start;
+            } else if ((helpArr[i].charCodeAt(0) < 48 || helpArr[i].charCodeAt(0) > 57) && i > 0 && helpArr[i] != "-" && helpArr[i] != "+" && helpArr[i] != ".") {
+              specialChar = 1;
+              strtIndex = i + start;
+            }
+          }
+          if((helpArr[0].charCodeAt(0) < 48 || helpArr[0].charCodeAt(0) > 57) && specialChar == 0) {
+            temp = helpArr[0];
+            for (let i = 0; i < end - start - 1; i++) {
+              helpArr[i] = helpArr[i + 1];
+            }
+            helpArr[end - start - 1] = temp;
+          } else if (specialChar == 1) {
+            let tempArr = new Array(strtIndex + 1 - start);
+            for (let i = 0; i < end - start; i++) {
+              if (start + i < strtIndex) {
+                helpArr[end - 1 - start - i] = text[strtIndex - 1 - i];
+              } else if (start + i == strtIndex) {
+                helpArr[end - 1 - start - i] = text[strtIndex];
+              } else  {
+                helpArr[start + i - strtIndex - 1] = text[start + i];
+              }
+            }
+          }
+
+          newText = text.substring(0, start) + helpArr.join('') + text.substring(end);
+          arrCreator(textarea, numofLines, arr, newText);
+          textarea.value = arrayToStringUpdated(arr, numofLines);  //apply changes
+        }
+
+        //console.log(helpArr);
+        console.log(newText); //apply changes
+        return;
+      }
+      function lengthOfArrNoNulls(arr) {
+        let lenNoNulls = arr.length;
+        let arrNull = [];
+        for (let i = 0; i < arr.length; i++) {
+          if (arr[i] == arrNull[0]) {
+            lenNoNulls--;
+          }
+        }
+        return lenNoNulls;
+      }
+      function canCreateNewLine(textarea, posAtText) {
+          if (posAtText == -1)
+            return 0;
+          let multiplier = Math.ceil(posAtText / 143);
+          let posAtEnd = 143 * multiplier;
+          let text = textarea.value;
+          for (let i = 0; i < posAtEnd - posAtText; i++) {
+            if (text[i + posAtText] == " ")
+              return 1;
+          }
+          return 0;
+      }
+      function arrCreator(textarea, numofLines, arr, text) {
+        if (arr == [])
+          return;
+        let a = 0, b = 0, posAtText = 0, x = 0, y = 0;
+        let spacePos = -1, endspace = -1, actualpos = 0;
+        let arrNull = [], arrnew = [];
+        let newpos = -1;
+        let moveTrue = 0, moveBy = 0;
+        while(a < numofLines) {
+          while(b < 143) {
+            arr[a][b] = text[posAtText];
+            if(text[posAtText] == "\n") {
+              break;
+            }
+            if (text[posAtText] == " ") {
+              spacePos = b;
+              actualpos = posAtText;
+              if (spacePos == 142) {
+                arr[a][b] = "\n";
+                break;
+              }
+            }
+            if (b == 142 && text[posAtText] != arrNull[0]) {
+              for (let i = 0; i < spacePos; i++) {
+                if(text[posAtText + 1 + i] == " ") {
+                  endspace = i;
+                  newpos = posAtText + i;
+                  arrnew[142 - spacePos + i] = text[posAtText + 1 + i];
+                }
+              }
+              if (endspace == - 1 || spacePos == -1 || spacePos == 142 || actualpos == -1) {
+                arr[a][b] = "\n"; //not really the want out put just here for testing
+                break;
+              }
+
+              for (let j = 0; j < 142 - spacePos; j++) {
+                //arrnew[j] = text[actualpos + 1 + j];
+                arr[a][spacePos + j +1] = arrNull[0];
+              }
+              arr[a][spacePos + 1] = "\n"; //end here for testing clac
+              /*moveBy = endspace;
+              while (arrnew[x] !== arrNull[0]) {
+                arr[a + 1][x] = arrnew[x];
+                x++;
+              }*/
+              posAtText = actualpos;
+              moveTrue = 1;
+              x = 0;
+              //a++;
+              break; //just so we dont do another "posAtText++;"
+            }
+            posAtText++;
+            b++;
+          }
+          a++;
+          b = 0;
+          posAtText++;
+          actualpos = -1;
+          if (moveTrue == 1) {
+          //  b = endspace;
+            //posAtText = newpos;
+          }
+          moveTrue = 0;
+          arrnew = [];
+          endspace = - 1;
+          spacePos = -1;
+        }
+        console.log(arr);
+      }
+      function isALetter(letter, retType) {
+        let ahlap = 'א', tepth = 'ת';
+        let asciiValAhlap = ahlap.charCodeAt(0), asciiValTepth = tepth.charCodeAt(0);
+        if (letter.charCodeAt(0) >= 65 && letter.charCodeAt(0) <= 90) {
+          if (retType == 0) {
+            return true;
+          } else {
+            return 0; //English char
+          }
+        } else if (letter.charCodeAt(0) >= 97 && letter.charCodeAt(0) <= 122) {
+          if (retType == 0) {
+            return true;
+          } else {
+            return 0; //English char
+          }
+        } else if (letter.charCodeAt(0) >= asciiValAhlap && letter.charCodeAt(0) <= asciiValTepth) {
+          if (retType == 0) {
+            return true;
+          } else {
+            return 1; //Hebrew char
+          }
+        }
+        return false;
+      }
+      function orderArrByDir(arr, numofLines, text, textarea) {
+        let boolTOF = 0; //0 for false, 1 for true
+        let firstLetter = -2;
+        for (let i = 0; i < numofLines; i++) {
+          for (let j = 0; j < 143; j++) {
+            if (arr[i][j] != undefined) {
+              if (isALetter(arr[i][j], 0)) {
+                boolTOF = isALetter(arr[i][j], 1);
+                break;
+              }
+            }
+          }
+          if (boolTOF == 1) {
+            swapArrRow(arr, i);
+          }
+        }
+      }
+      function swapArrRow(arr, rowNum) {
+        let temp;
+        for (let i = 0; i < 143/2; i++) {
+          temp = arr[rowNum][i];
+          arr[rowNum][i] = arr[rowNum][142 - i];
+          arr[rowNum][142- i] = temp;
+        }
+      }
+      function swapPushByOneLeftAppendEnd() {
+        const textarea = document.getElementById("textArea");
+        const text = textarea.value;
+        let arr = prepToFixText(1);
+        let numofLines = prepToFixText(3);
+        let temp;
+        let selection = window.getSelection();
+        let start = textarea.selectionStart, end = textarea.selectionEnd;
+        let helpArr = new Array(end - start);
+        for (let i = 0; i < end - start - 1; i++) {
+          helpArr[i+1] = text[start + i];
+        }
+        helpArr[0] = text[end - 1];
+        /*temp = helpArr[0];
+        helpArr[0] = helpArr[end - start - 1];
+        helpArr[end - start - 1] = temp;*/
+        newText = text.substring(0, start) + helpArr.join('') + text.substring(end);
+        /*temp = text[start];
+        text[start] = text[end - 1];
+        text[end - 1] = temp;*/
+        arrCreator(textarea, numofLines, arr, newText);
+        textarea.value = arrayToStringUpdated(arr, numofLines);
+      }
+      function convertToDiv() {
+        const textareaContent = document.getElementById("textArea").value;
+        let divTest = document.getElementById("testRun");
+        let str = "";
+        let index = 0;
+        let elemtStrt = false;
+        divTest.innerHTML = '<div dir = "auto">' + textareaContent.replace(/\n/g, '</div><div dir = "auto">') + '</div>';
+        text = divTest.innerHTML;
+        let endResult = text;
+        while(index < text.length) {
+          if (text[index] == "<") {
+            if (text.substring(index, index + 4) == "<img") {
+              endResult = endResult.substring(0, index + 4) + " " + "class = ''" + endResult.substring(index + 4);
+              index +=4;
+            }
+          }
+          index++;
+        }
+        //console.log(divTest.innerHTML[1] == "\n");
+        //divTest.inenerHTML += '</div>';
+      }
+      //add class to div with img in editable div
+      function addClass(divTest) {
+        let src = "<img";
+        let text = divTest.inenerHTML;
+        let index = 0;
+      }
+    </script>
+  </body>
+</html>
