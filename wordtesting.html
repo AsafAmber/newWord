@@ -710,6 +710,22 @@
                 break;
               }
             }
+            //
+            if (b == 142 && text[posAtText] != arrNull[0]) {
+              if (spacePos == -1) {
+                arr[a][b] = "\n";
+                posAtText--;
+                break;
+              } else {
+                arr[a][spacePos] = "\n";
+                for (let i = spacePos + 1; i < 143; i++) {
+                  arr[a][i] = arrNull[0];
+                }
+                posAtText = posAtText - 143 + spacePos + 1;
+                break;
+              }
+            }
+            //
             if (b == 142 && text[posAtText] != arrNull[0]) {
               for (let i = 0; i < spacePos; i++) {
                 if(text[posAtText + 1 + i] == " ") {
