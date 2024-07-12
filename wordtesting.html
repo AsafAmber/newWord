@@ -830,12 +830,12 @@
         textarea.value = arrayToStringUpdated(arr, numofLines);
       }
       function convertToDiv() {
-        const textareaContent = document.getElementById("textArea").value;
+        let textareaContent = document.getElementById("textArea").value;
         let divTest = document.getElementById("testRun");
         let str = "";
         let index = 0;
         let elemtStrt = false;
-        divTest.innerHTML = '<div dir = "auto">' + textareaContent.replace(/\n/g, '</div><div dir = "auto">') + '</div>';
+        divTest.innerHTML = '<div dir = "auto">' + textareaContent.replace(/\n/g, '<br>') + '</div>';
         text = divTest.innerHTML;
         let endResult = text;
         while(index < text.length) {
